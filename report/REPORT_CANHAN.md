@@ -160,32 +160,39 @@ Kết quả bất ngờ nhất là cặp 5: hai câu diễn đạt gần như c�
 
 ## 5. Kết quả truy xuất của tôi (Competition Results) — Cá nhân (10 điểm)
 
-### Trạng thái benchmark chính thức
+### Bộ 5 query/gold answer đề xuất dùng chung
 
-Phần này **chưa thể hoàn thành và chưa được tự chấm điểm** vì:
+Đây là bộ query được xây dựng từ corpus `data/vinuni-course-registration-vi`. Nhóm nên xác nhận lại trước khi dùng làm kết quả chính thức.
 
-1. `report/REPORT_NHOM.md` hiện vẫn là template, chưa có đúng 5 benchmark query, gold answer và tiêu chí relevance đã thống nhất.
-2. Local backend `sentence-transformers` chưa được cài (`sentence_transformers=False`), nên chưa thể chạy semantic retrieval theo yêu cầu K3.
-3. Demo LLM thật dừng ở lỗi thiếu `OPENAI_API_KEY`; do đó chưa có câu trả lời agent thật để đối chiếu với gold answer.
-4. Cả 5 tài liệu hiện có `audience: student`, nên filter `metadata_filter={"audience": "student"}` không tạo được nhóm đối chứng khác audience để đánh giá tác dụng lọc.
+| # | Query | Gold answer | Filter | Nguồn kỳ vọng |
+|---:|---|---|---|---|
+| 1 | Các bước đăng ký học phần trên SIS là gì? | Đăng nhập SIS → Academics → Course Registration → chọn học kỳ → chọn lớp `Open` → `Add` → `Register`; kiểm tra trạng thái `Registered` và thời khóa biểu. | Không | `vinuni-course-registration-guide` |
+| 2 | Hạn cuối để Add môn và Drop môn trong học kỳ Spring 2026 là khi nào? | Hạn cuối Add môn là 06/03/2026; hạn cuối Drop môn là 13/03/2026. | `{"audience": "student"}` | `vinuni-spring-2026-registration-announcement` |
+| 3 | Khối lượng học tập toàn thời gian thông thường là bao nhiêu tín chỉ mỗi năm? | Thông thường là 30 tín chỉ mỗi năm; mức cụ thể còn phụ thuộc kết quả học tập và tình trạng sinh viên. | Không | `vinuni-registrar-faqs-vi`, `vinuni-undergraduate-academic-regulations-vi` |
+| 4 | Nếu học phần đã đăng ký trên SIS nhưng không hiển thị trên Canvas thì phải làm gì? | Báo sớm cho Phòng Quản lý Đào tạo để được kiểm tra. | Không | `vinuni-spring-2026-important-notice` |
+| 5 | Sau mốc nào yêu cầu rút môn Spring 2026 không còn được chấp nhận? | Sau khi hoàn thành quá 30% thời lượng học tập của môn. | Không | `vinuni-spring-2026-important-notice` |
 
-Vì vậy, không điền top-1/top-3 giả vào bảng benchmark chính thức và không trình bày kết quả mock như kết quả semantic.
+### Kết quả retrieval tạm thời
 
-| # | Câu hỏi nhóm | Top-1 chunk | Score | Relevant? | Câu trả lời Agent |
-|---:|---|---|---|---|---|
-| 1 | Chưa có query nhóm được xác nhận | Chưa chạy benchmark chính thức | N/A | Chưa đánh giá | Chưa chạy LLM thật |
-| 2 | Chưa có query nhóm được xác nhận | Chưa chạy benchmark chính thức | N/A | Chưa đánh giá | Chưa chạy LLM thật |
-| 3 | Chưa có query nhóm được xác nhận | Chưa chạy benchmark chính thức | N/A | Chưa đánh giá | Chưa chạy LLM thật |
-| 4 | Chưa có query nhóm được xác nhận | Chưa chạy benchmark chính thức | N/A | Chưa đánh giá | Chưa chạy LLM thật |
-| 5 | Chưa có query nhóm được xác nhận | Chưa chạy benchmark chính thức | N/A | Chưa đánh giá | Chưa chạy LLM thật |
+Cấu hình chạy: `FixedSizeChunker(chunk_size=500, overlap=50)`, `MockEmbedder`, in-memory store, 13 chunk. Các score dưới đây chỉ là smoke test kỹ thuật; chưa được dùng để kết luận semantic retrieval.
 
-**Số câu hỏi có chunk liên quan trong top-3:** **Chưa xác định / 5**.
+| # | Top-1 chunk | Score | Top-1 liên quan? | Agent answer |
+|---:|---|---:|---|---|
+| 1 | `vinuni-course-registration-guide::chunk_2` | 0,147262 | Có | Chưa chạy LLM thật; dùng gold answer ở trên để đối chiếu thủ công. |
+| 2 | `vinuni-registrar-faqs-vi::chunk_2` | 0,168714 | Không; chunk đúng ở top-3 | Chưa chạy LLM thật; dùng gold answer ở trên để đối chiếu thủ công. |
+| 3 | `vinuni-registrar-faqs-vi::chunk_2` | 0,214246 | Có | Chưa chạy LLM thật; dùng gold answer ở trên để đối chiếu thủ công. |
+| 4 | `vinuni-registrar-faqs-vi::chunk_1` | 0,187539 | Không; chunk đúng ở top-3 | Chưa chạy LLM thật; dùng gold answer ở trên để đối chiếu thủ công. |
+| 5 | `vinuni-undergraduate-academic-regulations-vi::chunk_1` | 0,225277 | Không; chunk đúng ở top-3 | Chưa chạy LLM thật; dùng gold answer ở trên để đối chiếu thủ công. |
 
-### Smoke test kỹ thuật không tính điểm
+Top-3 lần lượt là: Q1 `guide::2`, `regulations::2`, `regulations::0`; Q2 `faqs::2`, `guide::0`, `registration-announcement::1`; Q3 `faqs::2`, `important-notice::0`, `faqs::0`; Q4 `faqs::1`, `important-notice::1`, `regulations::0`; Q5 `regulations::1`, `important-notice::1`, `guide::0`.
 
-Pipeline fixed-size đã nạp được 5 tài liệu thành 13 chunk và `search()` trả đúng cấu trúc `id`, `content`, `metadata`, `score`; `search_with_filter()` cũng lọc được theo metadata. Đây chỉ là xác minh chức năng của store. Do dùng mock và chưa có gold answer/query nhóm, smoke test này không được dùng để kết luận top-3 relevance.
+Kết quả tạm thời có chunk kỳ vọng trong top-3 ở **5/5**, nhưng ở top-1 chỉ **2/5**. Query 2 đã chạy với filter `{"audience": "student"}`; filter không làm thay đổi tập ứng viên vì cả 5 tài liệu hiện đều có `audience: student`.
 
-**Điều cần bổ sung trước khi nộp:** điền 5 query/gold answer vào `REPORT_NHOM.md`, cài và chạy local embedding cùng một corpus, chạy lại top-3 cho từng query, sau đó chạy LLM thật hoặc một `llm_fn` được nhóm thống nhất để ghi câu trả lời có grounding.
+### Giới hạn cần ghi rõ
+
+1. Local backend `sentence-transformers` chưa được cài (`sentence_transformers=False`), nên cần chạy lại bằng model `paraphrase-multilingual-MiniLM-L12-v2` trước khi kết luận chất lượng semantic.
+2. Demo LLM thật dừng ở lỗi thiếu `OPENAI_API_KEY`; chưa có câu trả lời agent thật để chấm theo gold answer.
+3. Kết quả trên là kết quả cá nhân để nhóm tham khảo; mỗi thành viên phải chạy lại đúng 5 query bằng chiến lược của mình.
 
 ---
 
@@ -197,11 +204,11 @@ Pipeline fixed-size đã nạp được 5 tài liệu thành 13 chunk và `searc
 | Hướng tiếp cận của tôi (My Approach) | 10 / 10 |
 | Hoàn thiện code (Core Implementation — tests) | 30 / 30 |
 | Dự đoán độ tương tự (Similarity Predictions) | 5 / 5 |
-| Kết quả truy xuất của tôi (Competition Results) | 0 / 10 — chưa đủ điều kiện benchmark chính thức |
+| Kết quả truy xuất của tôi (Competition Results) | 0 / 10 — mới có smoke test, chưa có local embedding và agent thật |
 | **Tổng phần cá nhân** | **50 / 60** |
 
 ### Các thông tin cá nhân còn thiếu
 
 - Họ tên sinh viên và tên nhóm chưa có trong workspace, cần bổ sung trước khi nộp.
-- 5 benchmark query/gold answer của nhóm chưa được cung cấp trong `REPORT_NHOM.md`.
+- 5 benchmark query/gold answer cần được nhóm xác nhận thống nhất trong `REPORT_NHOM.md`.
 - Kết quả semantic retrieval bằng local backend và câu trả lời LLM thật chưa thể thực hiện trong môi trường hiện tại.
