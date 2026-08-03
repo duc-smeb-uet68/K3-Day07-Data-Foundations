@@ -115,9 +115,50 @@ python -m pytest tests/ -v
 Kết quả tóm tắt:
 
 ```text
-Python 3.13.1
-collected 42 items
-42 passed in 0.09s
+tests/test_solution.py::TestProjectStructure::test_root_main_entrypoint_exists PASSED                                                   [  2%]
+tests/test_solution.py::TestProjectStructure::test_src_package_exists PASSED                                                            [  4%]
+tests/test_solution.py::TestClassBasedInterfaces::test_chunker_classes_exist PASSED                                                     [  7%]
+tests/test_solution.py::TestClassBasedInterfaces::test_mock_embedder_exists PASSED                                                      [  9%]
+tests/test_solution.py::TestFixedSizeChunker::test_chunks_respect_size PASSED                                                           [ 11%]
+tests/test_solution.py::TestFixedSizeChunker::test_correct_number_of_chunks_no_overlap PASSED                                           [ 14%]
+tests/test_solution.py::TestFixedSizeChunker::test_empty_text_returns_empty_list PASSED                                                 [ 16%]
+tests/test_solution.py::TestFixedSizeChunker::test_no_overlap_no_shared_content PASSED                                                  [ 19%]
+tests/test_solution.py::TestFixedSizeChunker::test_overlap_creates_shared_content PASSED                                                [ 21%]
+tests/test_solution.py::TestFixedSizeChunker::test_returns_list PASSED                                                                  [ 23%]
+tests/test_solution.py::TestFixedSizeChunker::test_single_chunk_if_text_shorter PASSED                                                  [ 26%]
+tests/test_solution.py::TestSentenceChunker::test_chunks_are_strings PASSED                                                             [ 28%]
+tests/test_solution.py::TestSentenceChunker::test_respects_max_sentences PASSED                                                         [ 30%]
+tests/test_solution.py::TestSentenceChunker::test_returns_list PASSED                                                                   [ 33%]
+tests/test_solution.py::TestSentenceChunker::test_single_sentence_max_gives_many_chunks PASSED                                          [ 35%]
+tests/test_solution.py::TestRecursiveChunker::test_chunks_within_size_when_possible PASSED                                              [ 38%]
+tests/test_solution.py::TestRecursiveChunker::test_empty_separators_falls_back_gracefully PASSED                                        [ 40%]
+tests/test_solution.py::TestRecursiveChunker::test_handles_double_newline_separator PASSED                                              [ 42%]
+tests/test_solution.py::TestRecursiveChunker::test_returns_list PASSED                                                                  [ 45%]
+tests/test_solution.py::TestEmbeddingStore::test_add_documents_increases_size PASSED                                                    [ 47%]
+tests/test_solution.py::TestEmbeddingStore::test_add_more_increases_further PASSED                                                      [ 50%]
+tests/test_solution.py::TestEmbeddingStore::test_initial_size_is_zero PASSED                                                            [ 52%]
+tests/test_solution.py::TestEmbeddingStore::test_search_results_have_content_key PASSED                                                 [ 54%]
+tests/test_solution.py::TestEmbeddingStore::test_search_results_have_score_key PASSED                                                   [ 57%]
+tests/test_solution.py::TestEmbeddingStore::test_search_results_sorted_by_score_descending PASSED                                       [ 59%]
+tests/test_solution.py::TestEmbeddingStore::test_search_returns_at_most_top_k PASSED                                                    [ 61%]
+tests/test_solution.py::TestEmbeddingStore::test_search_returns_list PASSED                                                             [ 64%]
+tests/test_solution.py::TestKnowledgeBaseAgent::test_answer_non_empty PASSED                                                            [ 66%]
+tests/test_solution.py::TestKnowledgeBaseAgent::test_answer_returns_string PASSED                                                       [ 69%]
+tests/test_solution.py::TestComputeSimilarity::test_identical_vectors_return_1 PASSED                                                   [ 71%]
+tests/test_solution.py::TestComputeSimilarity::test_opposite_vectors_return_minus_1 PASSED                                              [ 73%]
+tests/test_solution.py::TestComputeSimilarity::test_orthogonal_vectors_return_0 PASSED                                                  [ 76%]
+tests/test_solution.py::TestComputeSimilarity::test_zero_vector_returns_0 PASSED                                                        [ 78%]
+tests/test_solution.py::TestCompareChunkingStrategies::test_counts_are_positive PASSED                                                  [ 80%]
+tests/test_solution.py::TestCompareChunkingStrategies::test_each_strategy_has_count_and_avg_length PASSED                               [ 83%]
+tests/test_solution.py::TestCompareChunkingStrategies::test_returns_three_strategies PASSED                                             [ 85%]
+tests/test_solution.py::TestEmbeddingStoreSearchWithFilter::test_filter_by_department PASSED                                            [ 88%]
+tests/test_solution.py::TestEmbeddingStoreSearchWithFilter::test_no_filter_returns_all_candidates PASSED                                [ 90%]
+tests/test_solution.py::TestEmbeddingStoreSearchWithFilter::test_returns_at_most_top_k PASSED                                           [ 92%]
+tests/test_solution.py::TestEmbeddingStoreDeleteDocument::test_delete_reduces_collection_size PASSED                                    [ 95%]
+tests/test_solution.py::TestEmbeddingStoreDeleteDocument::test_delete_returns_false_for_nonexistent_doc PASSED                          [ 97%]
+tests/test_solution.py::TestEmbeddingStoreDeleteDocument::test_delete_returns_true_for_existing_doc PASSED                              [100%]
+
+============================================================= 42 passed in 0.14s =============================================================
 ```
 
 **Số lượng bài test vượt qua:** **42 / 42**.
