@@ -4,9 +4,9 @@
 **Nhóm:** Chưa cung cấp
 **Ngày:** 2026-08-03
 
-> Báo cáo này được hoàn thiện theo code và dữ liệu hiện có trong repository. Các số liệu unit test, ingest và baseline là kết quả chạy thực tế. Phần benchmark semantic chính thức và câu trả lời của LLM chưa thể hoàn thành vì `REPORT_NHOM.md` chưa có 5 query/gold answer đã thống nhất, local embedder chưa được cài và môi trường chưa có `OPENAI_API_KEY`.
+> Báo cáo này được hoàn thiện theo code, dữ liệu và output chạy thực tế do cá nhân cung cấp. Phần benchmark đã chạy bằng local embedding và agent OpenRouter; kết quả, giới hạn của query có filter và một lỗi grounding ở query 5 được ghi rõ bên dưới.
 
-**Cấu hình đã xác minh:** corpus `data/vinuni-course-registration-vi`, chunker mặc định `FixedSizeChunker(chunk_size=500, overlap=50)`, backend `MockEmbedder` cho unit test/smoke test, store in-memory. Theo quy định của lab, mock không được dùng để kết luận chất lượng retrieval ngữ nghĩa.
+**Cấu hình benchmark:** corpus `data/vinuni-course-registration-vi`, 13 chunk, `FixedSizeChunker(chunk_size=500, overlap=50)`, local embedding `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`, in-memory store và agent OpenRouter Chat Completions với model `openai/gpt-4o-mini`. Unit test/similarity prediction vẫn dùng `MockEmbedder`; không dùng mock để kết luận retrieval ngữ nghĩa.
 
 ---
 
@@ -172,27 +172,34 @@ Kết quả bất ngờ nhất là cặp 5: hai câu diễn đạt gần như c�
 | 4 | Nếu học phần đã đăng ký trên SIS nhưng không hiển thị trên Canvas thì phải làm gì? | Báo sớm cho Phòng Quản lý Đào tạo để được kiểm tra. | Không | `vinuni-spring-2026-important-notice` |
 | 5 | Sau mốc nào yêu cầu rút môn Spring 2026 không còn được chấp nhận? | Sau khi hoàn thành quá 30% thời lượng học tập của môn. | Không | `vinuni-spring-2026-important-notice` |
 
-### Kết quả retrieval tạm thời
+### Kết quả retrieval và agent đã chạy thật
 
-Cấu hình chạy: `FixedSizeChunker(chunk_size=500, overlap=50)`, `MockEmbedder`, in-memory store, 13 chunk. Các score dưới đây chỉ là smoke test kỹ thuật; chưa được dùng để kết luận semantic retrieval.
+Các output đều xác nhận backend `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`, nạp 13 chunk và agent OpenRouter `openai/gpt-4o-mini`. `main.py` đang gọi `store.search()` nên Q2 thực tế **chưa áp dụng** `metadata_filter`; phần này cần chạy bổ sung bằng `search_with_filter()`.
 
-| # | Top-1 chunk | Score | Top-1 liên quan? | Agent answer |
-|---:|---|---:|---|---|
-| 1 | `vinuni-course-registration-guide::chunk_2` | 0,147262 | Có | Chưa chạy LLM thật; dùng gold answer ở trên để đối chiếu thủ công. |
-| 2 | `vinuni-registrar-faqs-vi::chunk_2` | 0,168714 | Không; chunk đúng ở top-3 | Chưa chạy LLM thật; dùng gold answer ở trên để đối chiếu thủ công. |
-| 3 | `vinuni-registrar-faqs-vi::chunk_2` | 0,214246 | Có | Chưa chạy LLM thật; dùng gold answer ở trên để đối chiếu thủ công. |
-| 4 | `vinuni-registrar-faqs-vi::chunk_1` | 0,187539 | Không; chunk đúng ở top-3 | Chưa chạy LLM thật; dùng gold answer ở trên để đối chiếu thủ công. |
-| 5 | `vinuni-undergraduate-academic-regulations-vi::chunk_1` | 0,225277 | Không; chunk đúng ở top-3 | Chưa chạy LLM thật; dùng gold answer ở trên để đối chiếu thủ công. |
+| # | Top-1 source | Score | Top-1 liên quan? | Câu trả lời Agent | Đánh giá |
+|---:|---|---:|---|---|---|
+| 1 | `vinuni-course-registration-guide.md` | 0,790 | Có | Đăng nhập SIS → `Academics` → `Course Registration` → chọn học kỳ → lớp `Open` → `Add` → `Register` → kiểm tra `Registered` và `Your Class Schedule`. | Đúng và đầy đủ. |
+| 2 | `vinuni-spring-2026-registration-announcement.md` | 0,788 | Có | Hạn cuối Add là 06/03/2026; hạn cuối Drop là 13/03/2026. | Đúng và đầy đủ; chưa chạy filter trong `main.py`. |
+| 3 | `vinuni-undergraduate-academic-regulations-vi.md` | 0,684 | Có | Khối lượng học tập toàn thời gian thông thường là 30 tín chỉ mỗi năm. | Đúng; FAQ cũng nằm trong top-3. |
+| 4 | `vinuni-spring-2026-important-notice.md` | 0,623 | Có | Nếu học phần đã đăng ký trên SIS nhưng không hiển thị trên Canvas, cần báo sớm cho Phòng Quản lý Đào tạo. | Đúng và bám nguồn. |
+| 5 | `vinuni-spring-2026-registration-announcement.md` | 0,700 | Liên quan một phần; nguồn đúng ở top-2 | Rút môn Spring 2026 không còn được chấp nhận sau hạn cuối ngày 13/03/2026. | Chưa đầy đủ: thiếu điều kiện “sau khi hoàn thành quá 30% thời lượng học tập”. |
 
-Top-3 lần lượt là: Q1 `guide::2`, `regulations::2`, `regulations::0`; Q2 `faqs::2`, `guide::0`, `registration-announcement::1`; Q3 `faqs::2`, `important-notice::0`, `faqs::0`; Q4 `faqs::1`, `important-notice::1`, `regulations::0`; Q5 `regulations::1`, `important-notice::1`, `guide::0`.
+Top-3 theo output đã chạy:
 
-Kết quả tạm thời có chunk kỳ vọng trong top-3 ở **5/5**, nhưng ở top-1 chỉ **2/5**. Query 2 đã chạy với filter `{"audience": "student"}`; filter không làm thay đổi tập ứng viên vì cả 5 tài liệu hiện đều có `audience: student`.
+- Q1: registration guide (0,790), registration guide (0,627), Spring 2026 announcement (0,601).
+- Q2: Spring 2026 registration announcement (0,788), Spring 2026 important notice (0,629), Spring 2026 important notice (0,578).
+- Q3: undergraduate regulations (0,684), registrar FAQs (0,662), registrar FAQs (0,389).
+- Q4: Spring 2026 important notice (0,623), registration guide (0,595), registration guide (0,582).
+- Q5: Spring 2026 registration announcement (0,700), Spring 2026 important notice (0,511), Spring 2026 registration announcement (0,360).
 
-### Giới hạn cần ghi rõ
+**Tổng hợp:** cả 5 query đều có nguồn liên quan trong top-3 (**5/5**); 4/5 query có top-1 phù hợp đầy đủ. Q5 là failure case: retrieval top-1 bị lệch sang thông tin deadline, còn chunk đúng nằm ở top-2; agent trả lời đúng một phần nhưng bỏ sót mốc 30% thời lượng học tập.
 
-1. Local backend `sentence-transformers` chưa được cài (`sentence_transformers=False`), nên cần chạy lại bằng model `paraphrase-multilingual-MiniLM-L12-v2` trước khi kết luận chất lượng semantic.
-2. Demo LLM thật dừng ở lỗi thiếu `OPENAI_API_KEY`; chưa có câu trả lời agent thật để chấm theo gold answer.
-3. Kết quả trên là kết quả cá nhân để nhóm tham khảo; mỗi thành viên phải chạy lại đúng 5 query bằng chiến lược của mình.
+### Giới hạn và việc cần chạy bổ sung
+
+1. Q2 cần chạy lại bằng `store.search_with_filter(query, metadata_filter={"audience": "student"})`; output hiện tại từ `main.py` là không filter.
+2. `KnowledgeBaseAgent.answer()` hiện chưa nhận `metadata_filter`, nên muốn agent cũng bị giới hạn bởi filter thì cần bổ sung tham số hoặc tạo wrapper benchmark dùng filtered context.
+3. Q5 cần cải thiện query/chunking hoặc prompt để ưu tiên điều kiện “quá 30% thời lượng học tập”, thay vì chỉ lấy deadline Drop.
+4. Mỗi thành viên vẫn phải chạy đúng 5 query bằng chiến lược riêng để so sánh công bằng.
 
 ---
 
@@ -204,11 +211,11 @@ Kết quả tạm thời có chunk kỳ vọng trong top-3 ở **5/5**, nhưng �
 | Hướng tiếp cận của tôi (My Approach) | 10 / 10 |
 | Hoàn thiện code (Core Implementation — tests) | 30 / 30 |
 | Dự đoán độ tương tự (Similarity Predictions) | 5 / 5 |
-| Kết quả truy xuất của tôi (Competition Results) | 0 / 10 — mới có smoke test, chưa có local embedding và agent thật |
-| **Tổng phần cá nhân** | **50 / 60** |
+| Kết quả truy xuất của tôi (Competition Results) | 9 / 10 — 4 câu đầy đủ, 1 câu agent trả lời thiếu điều kiện |
+| **Tổng phần cá nhân** | **59 / 60** |
 
 ### Các thông tin cá nhân còn thiếu
 
 - Họ tên sinh viên và tên nhóm chưa có trong workspace, cần bổ sung trước khi nộp.
-- 5 benchmark query/gold answer cần được nhóm xác nhận thống nhất trong `REPORT_NHOM.md`.
-- Kết quả semantic retrieval bằng local backend và câu trả lời LLM thật chưa thể thực hiện trong môi trường hiện tại.
+- Nhóm vẫn cần xác nhận chính thức bộ 5 query/gold answer trong `REPORT_NHOM.md`.
+- Cần chạy bổ sung Q2 với metadata filter và sửa/đánh giá lại Q5 nếu muốn agent trả lời đầy đủ điều kiện 30%.
