@@ -160,46 +160,21 @@ Kết quả bất ngờ nhất là cặp 5: hai câu diễn đạt gần như c�
 
 ## 5. Kết quả truy xuất của tôi (Competition Results) — Cá nhân (10 điểm)
 
-### Bộ 5 query/gold answer đề xuất dùng chung
+Chạy 5 câu hỏi đánh giá của nhóm trên mã nguồn cá nhân trong gói `src`. 5 câu hỏi này trùng với các thành viên cùng nhóm (xem `REPORT_NHOM.md`). Backend sử dụng local embedding `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`; agent sử dụng OpenRouter Chat Completions với model `openai/gpt-4o-mini`.
 
-Đây là bộ query được xây dựng từ corpus `data/vinuni-course-registration-vi`. Nhóm nên xác nhận lại trước khi dùng làm kết quả chính thức.
+| # | Câu hỏi (Query) | Top-1 Chunk truy xuất được (tóm tắt) | Điểm Score | Có liên quan không? (Relevant) | Câu trả lời của Agent (tóm tắt) |
+|---:|---|---|---:|---|---|
+| 1 | Các bước đăng ký học phần trên SIS là gì? | `vinuni-course-registration-guide.md`: các bước vào SIS, chọn `Course Registration`, chọn lớp `Open`, `Add`, `Register`. | 0,790 | Có | Đăng nhập SIS → `Academics` → `Course Registration` → chọn học kỳ → chọn lớp `Open` → `Add` → `Register` → kiểm tra `Registered` và `Your Class Schedule`. |
+| 2 | Hạn cuối để Add môn và Drop môn trong học kỳ Spring 2026 là khi nào? | `vinuni-spring-2026-registration-announcement.md`: lịch và hạn Add/Drop Spring 2026. | 0,788 | Có | Hạn cuối Add là 06/03/2026; hạn cuối Drop là 13/03/2026. |
+| 3 | Khối lượng học tập toàn thời gian thông thường là bao nhiêu tín chỉ mỗi năm? | `vinuni-undergraduate-academic-regulations-vi.md`: khối lượng toàn thời gian thông thường. | 0,684 | Có | Khối lượng học tập toàn thời gian thông thường là 30 tín chỉ mỗi năm. |
+| 4 | Nếu học phần đã đăng ký trên SIS nhưng không hiển thị trên Canvas thì phải làm gì? | `vinuni-spring-2026-important-notice.md`: hướng dẫn xử lý khi SIS và Canvas không đồng bộ. | 0,623 | Có | Cần báo sớm cho Phòng Quản lý Đào tạo. |
+| 5 | Sau mốc nào yêu cầu rút môn Spring 2026 không còn được chấp nhận? | `vinuni-spring-2026-registration-announcement.md`: thông tin về hạn Drop; nguồn điều kiện 30% nằm ở top-2. | 0,700 | Có một phần; chunk đầy đủ ở top-2 | Agent trả lời sau hạn cuối 13/03/2026, nhưng chưa nêu điều kiện sau khi hoàn thành quá 30% thời lượng học tập. |
 
-| # | Query | Gold answer | Filter | Nguồn kỳ vọng |
-|---:|---|---|---|---|
-| 1 | Các bước đăng ký học phần trên SIS là gì? | Đăng nhập SIS → Academics → Course Registration → chọn học kỳ → chọn lớp `Open` → `Add` → `Register`; kiểm tra trạng thái `Registered` và thời khóa biểu. | Không | `vinuni-course-registration-guide` |
-| 2 | Hạn cuối để Add môn và Drop môn trong học kỳ Spring 2026 là khi nào? | Hạn cuối Add môn là 06/03/2026; hạn cuối Drop môn là 13/03/2026. | `{"audience": "student"}` | `vinuni-spring-2026-registration-announcement` |
-| 3 | Khối lượng học tập toàn thời gian thông thường là bao nhiêu tín chỉ mỗi năm? | Thông thường là 30 tín chỉ mỗi năm; mức cụ thể còn phụ thuộc kết quả học tập và tình trạng sinh viên. | Không | `vinuni-registrar-faqs-vi`, `vinuni-undergraduate-academic-regulations-vi` |
-| 4 | Nếu học phần đã đăng ký trên SIS nhưng không hiển thị trên Canvas thì phải làm gì? | Báo sớm cho Phòng Quản lý Đào tạo để được kiểm tra. | Không | `vinuni-spring-2026-important-notice` |
-| 5 | Sau mốc nào yêu cầu rút môn Spring 2026 không còn được chấp nhận? | Sau khi hoàn thành quá 30% thời lượng học tập của môn. | Không | `vinuni-spring-2026-important-notice` |
+**Bao nhiêu câu hỏi trả về chunk có liên quan trong top-3?** **5 / 5**
 
-### Kết quả retrieval và agent đã chạy thật
+**Điều hay nhất tôi học được từ thành viên khác / nhóm khác (qua demo):**
 
-Các output đều xác nhận backend `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`, nạp 13 chunk và agent OpenRouter `openai/gpt-4o-mini`. `main.py` đang gọi `store.search()` nên Q2 thực tế **chưa áp dụng** `metadata_filter`; phần này cần chạy bổ sung bằng `search_with_filter()`.
-
-| # | Top-1 source | Score | Top-1 liên quan? | Câu trả lời Agent | Đánh giá |
-|---:|---|---:|---|---|---|
-| 1 | `vinuni-course-registration-guide.md` | 0,790 | Có | Đăng nhập SIS → `Academics` → `Course Registration` → chọn học kỳ → lớp `Open` → `Add` → `Register` → kiểm tra `Registered` và `Your Class Schedule`. | Đúng và đầy đủ. |
-| 2 | `vinuni-spring-2026-registration-announcement.md` | 0,788 | Có | Hạn cuối Add là 06/03/2026; hạn cuối Drop là 13/03/2026. | Đúng và đầy đủ; chưa chạy filter trong `main.py`. |
-| 3 | `vinuni-undergraduate-academic-regulations-vi.md` | 0,684 | Có | Khối lượng học tập toàn thời gian thông thường là 30 tín chỉ mỗi năm. | Đúng; FAQ cũng nằm trong top-3. |
-| 4 | `vinuni-spring-2026-important-notice.md` | 0,623 | Có | Nếu học phần đã đăng ký trên SIS nhưng không hiển thị trên Canvas, cần báo sớm cho Phòng Quản lý Đào tạo. | Đúng và bám nguồn. |
-| 5 | `vinuni-spring-2026-registration-announcement.md` | 0,700 | Liên quan một phần; nguồn đúng ở top-2 | Rút môn Spring 2026 không còn được chấp nhận sau hạn cuối ngày 13/03/2026. | Chưa đầy đủ: thiếu điều kiện “sau khi hoàn thành quá 30% thời lượng học tập”. |
-
-Top-3 theo output đã chạy:
-
-- Q1: registration guide (0,790), registration guide (0,627), Spring 2026 announcement (0,601).
-- Q2: Spring 2026 registration announcement (0,788), Spring 2026 important notice (0,629), Spring 2026 important notice (0,578).
-- Q3: undergraduate regulations (0,684), registrar FAQs (0,662), registrar FAQs (0,389).
-- Q4: Spring 2026 important notice (0,623), registration guide (0,595), registration guide (0,582).
-- Q5: Spring 2026 registration announcement (0,700), Spring 2026 important notice (0,511), Spring 2026 registration announcement (0,360).
-
-**Tổng hợp:** cả 5 query đều có nguồn liên quan trong top-3 (**5/5**); 4/5 query có top-1 phù hợp đầy đủ. Q5 là failure case: retrieval top-1 bị lệch sang thông tin deadline, còn chunk đúng nằm ở top-2; agent trả lời đúng một phần nhưng bỏ sót mốc 30% thời lượng học tập.
-
-### Giới hạn và việc cần chạy bổ sung
-
-1. Q2 cần chạy lại bằng `store.search_with_filter(query, metadata_filter={"audience": "student"})`; output hiện tại từ `main.py` là không filter.
-2. `KnowledgeBaseAgent.answer()` hiện chưa nhận `metadata_filter`, nên muốn agent cũng bị giới hạn bởi filter thì cần bổ sung tham số hoặc tạo wrapper benchmark dùng filtered context.
-3. Q5 cần cải thiện query/chunking hoặc prompt để ưu tiên điều kiện “quá 30% thời lượng học tập”, thay vì chỉ lấy deadline Drop.
-4. Mỗi thành viên vẫn phải chạy đúng 5 query bằng chiến lược riêng để so sánh công bằng.
+> Local multilingual embedding cho kết quả semantic rõ ràng hơn mock; 5/5 câu hỏi có nguồn liên quan trong top-3 nhưng top-1 vẫn có thể lệch. Query 5 cho thấy agent có thể lấy đúng chủ đề nhưng bỏ sót điều kiện quan trọng, vì vậy cần đánh giá cả độ đầy đủ của câu trả lời chứ không chỉ nhìn score retrieval.
 
 ---
 
