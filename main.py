@@ -19,7 +19,13 @@ from src.embeddings import (
 
 # Thư mục dữ liệu mặc định cho demo = bộ khởi động cố định của lớp K3.
 # Đổi bằng biến môi trường: LAB_DATA_DIR=data/<thu-muc-cua-nhom> python3 main.py
-DEFAULT_DATA_DIR = "data/k3_university"
+# DEFAULT_DATA_DIR = "data/k3_university"
+LAB_DATA_DIR ="data/vinuni-course-registration-vi"
+DEFAULT_DATA_DIR = "data/vinuni-course-registration-vi"
+OPENROUTER_API_KEY_ENV = "OPENROUTER_API_KEY"
+OPENROUTER_LLM_MODEL_ENV = "OPENROUTER_LLM_MODEL"
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+DEFAULT_OPENROUTER_LLM_MODEL = "openai/gpt-4o-mini"
 
 
 def _select_embedder():
@@ -41,10 +47,37 @@ def _select_embedder():
     return _mock_embed
 
 
-def demo_llm(prompt: str) -> str:
-    """LLM giả lập đơn giản để thử RAG thủ công."""
-    preview = prompt[:400].replace("\n", " ")
-    return f"[DEMO LLM] Generated answer from prompt preview: {preview}..."
+def openrouter_llm(prompt: str) -> str:
+    """Generate a grounded answer with OpenRouter's OpenAI-compatible API."""
+    api_key = os.getenv(OPENROUTER_API_KEY_ENV)
+    if not api_key:
+        raise RuntimeError(
+            "Thiếu OPENROUTER_API_KEY. Hãy cấu hình OpenRouter API key trong "
+            "biến môi trường hoặc file .env trước khi chạy LLM thật."
+        )
+
+    from openai import OpenAI
+
+    client_kwargs = {
+        "api_key": api_key,
+        "base_url": OPENROUTER_BASE_URL,
+    }
+    optional_headers = {}
+    if site_url := os.getenv("OPENROUTER_SITE_URL"):
+        optional_headers["HTTP-Referer"] = site_url
+    if app_name := os.getenv("OPENROUTER_APP_NAME"):
+        optional_headers["X-OpenRouter-Title"] = app_name
+    if optional_headers:
+        client_kwargs["default_headers"] = optional_headers
+
+    client = OpenAI(**client_kwargs)
+    response = client.chat.completions.create(
+        model=os.getenv(OPENROUTER_LLM_MODEL_ENV, DEFAULT_OPENROUTER_LLM_MODEL),
+        messages=[{"role": "user", "content": prompt}],
+    )
+    if not response.choices:
+        raise RuntimeError("OpenRouter không trả về lựa chọn câu trả lời nào.")
+    return response.choices[0].message.content or ""
 
 
 def run_manual_demo(question: str | None = None, data_dir: str | None = None) -> int:
@@ -78,8 +111,9 @@ def run_manual_demo(question: str | None = None, data_dir: str | None = None) ->
         print(f"{index}. score={result['score']:.3f} source={result['metadata'].get('source')}")
         print(f"   {result['content'][:120].replace(chr(10), ' ')}...")
 
-    print("\n=== KnowledgeBaseAgent ===")
-    agent = KnowledgeBaseAgent(store=store, llm_fn=demo_llm)
+    llm_model = os.getenv(OPENROUTER_LLM_MODEL_ENV, DEFAULT_OPENROUTER_LLM_MODEL)
+    print(f"\n=== KnowledgeBaseAgent (OpenRouter Chat Completions: {llm_model}) ===")
+    agent = KnowledgeBaseAgent(store=store, llm_fn=openrouter_llm)
     print(agent.answer(query, top_k=3))
     return 0
 
